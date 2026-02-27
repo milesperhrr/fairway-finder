@@ -70,8 +70,10 @@ function displayCourses(list) {
 }
 
 function viewTeeTimes(name){
-  const url = `https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(name)}`;
-  window.open(url, '_blank'); // Opens GolfNow in a new tab
+  if(confirm("Open tee times in a new tab?")){
+    const url = `https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(name)}`;
+    window.open(url, '_blank');
+  }
 }
 
 function toggleFavorite(name){
@@ -88,3 +90,4 @@ function loadFavorites(){
   container.innerHTML=favs.map(f=>`<div class="card">${f}</div>`).join("");
 
 }
+
