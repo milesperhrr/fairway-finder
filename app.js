@@ -70,8 +70,8 @@ function displayCourses(list) {
 }
 
 function viewTeeTimes(name){
-  const container=document.getElementById("frame-"+name.replace(/\s/g,''));
-  container.innerHTML=`<iframe src="https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(name)}"></iframe>`;
+  const url = `https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(name)}`;
+  window.open(url, '_blank'); // Opens GolfNow in a new tab
 }
 
 function toggleFavorite(name){
@@ -86,4 +86,5 @@ function loadFavorites(){
   const favs=JSON.parse(localStorage.getItem("favorites"))||[];
   const container=document.getElementById("favorites");
   container.innerHTML=favs.map(f=>`<div class="card">${f}</div>`).join("");
+
 }
