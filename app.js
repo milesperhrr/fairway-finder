@@ -1,11 +1,24 @@
-let userLat, userLon;
-let courses = [];
+// ============================
+// Fairway Finder App JS
+// ============================
 
-function updateDistanceLabel(val) {
-  document.getElementById("distanceLabel").innerText = val;
-  applyFilters();
-}
+// User location
+let userLat = null;
+let userLon = null;
 
+// Example courses data (replace with real API later)
+const courses = [
+  { name: "Sunset Hills", rating: 4.7, lat: 37.7749, lon: -122.4194 },
+  { name: "Green Valley", rating: 4.2, lat: 37.8044, lon: -122.2712 },
+  { name: "Eagle Ridge", rating: 4.9, lat: 37.6879, lon: -122.4702 }
+];
+
+// Favorites stored locally
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+
+// ============================
+// Get user location
+// ============================
 function getLocation() {
   if (!navigator.geolocation) {
     alert("Geolocation is not supported by your browser.");
@@ -20,87 +33,108 @@ function getLocation() {
     },
     err => {
       console.error("Geolocation error:", err);
-      alert("Unable to retrieve your location. Make sure location services are enabled.");
+      alert(
+        "Unable to retrieve your location. Make sure location services are enabled."
+      );
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
 
-async function fetchCourses() {
-  const radiusMeters = document.getElementById("distanceRange").value * 1609;
-  const query = `
-  [out:json];
-  (
-    node["leisure"="golf_course"](around:${radiusMeters},${userLat},${userLon});
-    way["leisure"="golf_course"](around:${radiusMeters},${userLat},${userLon});
-  );
-  out center;
-  `;
-  const response = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: query });
-  const data = await response.json();
-  courses = data.elements.map(el => {
-    const lat = el.lat || el.center?.lat;
-    const lon = el.lon || el.center?.lon;
-    return { name: el.tags.name || "Golf Course", lat, lon, rating: Math.random()*2+3, distance: calculateDistance(userLat,userLon,lat,lon) };
-  });
-  applyFilters();
+// ============================
+// Calculate distance in km
+// ============================
+function distance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 3958.8;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * (2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-}
-
-function applyFilters() {
-  let sorted = [...courses];
-  const sortBy = document.getElementById("sortSelect").value;
-  if (sortBy==="distance") sorted.sort((a,b)=>a.distance-b.distance);
-  else sorted.sort((a,b)=>b.rating-a.rating);
-  displayCourses(sorted);
-}
-
-function displayCourses(list) {
-  const container = document.getElementById("results");
+// ============================
+// Render courses list
+// ============================
+function fetchCourses() {
+  const container = document.getElementById("courses");
   container.innerHTML = "";
-  list.forEach(course=>{
+
+  if (!userLat || !userLon) {
+    container.innerHTML = "<p>Waiting for location...</p>";
+    return;
+  }
+
+  const maxDistance = parseFloat(document.getElementById("distanceSlider").value);
+
+  let filtered = courses
+    .map(c => ({
+      ...c,
+      distance: distance(userLat, userLon, c.lat, c.lon)
+    }))
+    .filter(c => c.distance <= maxDistance);
+
+  // Sorting
+  const sortBy = document.getElementById("sortSelect").value;
+  if (sortBy === "distance") {
+    filtered.sort((a, b) => a.distance - b.distance);
+  } else if (sortBy === "rating") {
+    filtered.sort((a, b) => b.rating - a.rating);
+  }
+
+  // Render each course
+  filtered.forEach(c => {
     const div = document.createElement("div");
-    div.className="card";
-    div.innerHTML=`
-      <strong>${course.name}</strong><br>
-      📍 ${course.distance.toFixed(1)} miles<br>
-      ⭐ ${course.rating.toFixed(1)}<br>
-      <button onclick="toggleFavorite('${course.name}')">❤️ Favorite</button>
-      <button onclick="viewTeeTimes('${course.name}')">View Tee Times</button>
-      <div id="frame-${course.name.replace(/\s/g,'')}"></div>
+    div.className = "course";
+
+    div.innerHTML = `
+      <h3>${c.name}</h3>
+      <p>Rating: ${c.rating} ⭐</p>
+      <p>Distance: ${c.distance.toFixed(2)} km</p>
+      <button onclick="viewTeeTimes('${c.name}')">View Tee Times</button>
+      <button onclick="toggleFavorite('${c.name}')">
+        ${favorites.includes(c.name) ? "❤️" : "🤍"} Favorite
+      </button>
     `;
     container.appendChild(div);
   });
-  loadFavorites();
 }
 
-function viewTeeTimes(name){
-  if(confirm("Open tee times in a new tab?")){
-    const url = `https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(name)}`;
-    window.open(url, '_blank');
+// ============================
+// Open Tee Times in New Tab
+// ============================
+function viewTeeTimes(name) {
+  const url = `https://www.golfnow.com/tee-times/search?q=${encodeURIComponent(
+    name
+  )}`;
+  window.open(url, "_blank");
+}
+
+// ============================
+// Favorite Courses
+// ============================
+function toggleFavorite(name) {
+  if (favorites.includes(name)) {
+    favorites = favorites.filter(f => f !== name);
+  } else {
+    favorites.push(name);
   }
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  fetchCourses(); // re-render to update button
 }
 
-function toggleFavorite(name){
-  let favs=JSON.parse(localStorage.getItem("favorites"))||[];
-  if(favs.includes(name)) favs=favs.filter(f=>f!==name);
-  else favs.push(name);
-  localStorage.setItem("favorites",JSON.stringify(favs));
-  loadFavorites();
-}
+// ============================
+// Event Listeners
+// ============================
+document.getElementById("distanceSlider").addEventListener("input", fetchCourses);
+document.getElementById("sortSelect").addEventListener("change", fetchCourses);
 
-function loadFavorites(){
-  const favs=JSON.parse(localStorage.getItem("favorites"))||[];
-  const container=document.getElementById("favorites");
-  container.innerHTML=favs.map(f=>`<div class="card">${f}</div>`).join("");
-
-}
-
-
+// ============================
+// Initialize
+// ============================
+getLocation();
