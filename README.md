@@ -1,34 +1,40 @@
-# Fairway Finder
+# \# Fairway Finder
 
-**Fairway Finder** is a premium-feeling golf app that lets you:
+# 
 
-- Find nearby golf courses using GPS  
-- Filter by distance  
-- Sort by distance or rating  
-- Save favorite courses locally  
-- View live tee times embedded from GolfNow  
+# A simple PWA to find nearby golf courses using manual city/address input.
 
-## Features
+# 
 
-- 100% free, no API keys required  
-- Installable on Android and iOS as a PWA  
-- Modern dark premium UI  
-- Local storage for favorites  
+# \## Features
 
-## Installation
+# 
 
-### Android
+# \- Enter city or address to find courses
 
-1. Open the app URL in Chrome  
-2. Tap the ⋮ menu → Add to Home Screen  
+# \- Sort by distance or rating
 
-### iPhone
+# \- Distance filter
 
-1. Open the app URL in Safari  
-2. Tap Share → Add to Home Screen  
+# \- Favorite courses stored locally
 
-## Notes
+# \- View live tee times in a new tab
 
-- Tee times are displayed via an embedded browser  
-- Course ratings are randomly generated for now  
-- Location permission is required for nearby search
+# \- Works on iOS, Android, and desktop
+
+# \- PWA installable (Add to Home Screen)
+
+# 
+
+# \## How to Use
+
+# 
+
+# 1\. Open `index.html` (or GitHub Pages link)
+
+# 2\. Enter a city or address and click \*\*Set Location\*\*
+
+# 3\. Adjust distance and sorting
+
+# 4\. Click \*\*View Tee Times\*\* or \*\*❤️ Favorite\*\*
+

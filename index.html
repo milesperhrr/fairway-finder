@@ -1,38 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Fairway Finder</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css">
-<meta name="theme-color" content="#0f172a">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Fairway Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-<div class="app">
   <header>
     <h1>🏌️ Fairway Finder</h1>
-    <p>Find & Book Tee Times Near You</p>
   </header>
-  <div class="controls">
-    <button class="primary-btn" onclick="getLocation()">Find Nearby Courses</button>
-    <div class="filter-row">
-      <label>Distance: <span id="distanceLabel">25</span> mi</label>
-      <input type="range" min="5" max="50" value="25" id="distanceRange" oninput="updateDistanceLabel(this.value)">
+
+  <main>
+    <div id="locationEntry">
+      <input type="text" id="locationInput" placeholder="Enter city or address">
+      <button onclick="setLocation()">Set Location</button>
     </div>
-    <select id="sortSelect" onchange="applyFilters()">
-      <option value="distance">Sort by Distance</option>
-      <option value="rating">Sort by Rating</option>
-    </select>
-  </div>
-  <div id="results"></div>
-  <h2>Favorites</h2>
-  <div id="favorites"></div>
-</div>
-<script src="app.js"></script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
-}
-</script>
+
+    <div id="filters">
+      <label>Distance (km): <span id="distanceValue">50</span></label>
+      <input type="range" id="distanceSlider" min="1" max="200" value="50">
+      
+      <label>Sort by:
+        <select id="sortSelect">
+          <option value="distance">Distance</option>
+          <option value="rating">Rating</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="courses">
+      <p>Enter a city or address to see nearby courses.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© Fairway Finder</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>

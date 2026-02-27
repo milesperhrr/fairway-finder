@@ -1,12 +1,7 @@
-// ============================
-// Fairway Finder App JS
-// ============================
-
-// User location
 let userLat = null;
 let userLon = null;
 
-// Example courses data (replace with real API later)
+// Example courses data
 const courses = [
   { name: "Sunset Hills", rating: 4.7, lat: 37.7749, lon: -122.4194 },
   { name: "Green Valley", rating: 4.2, lat: 37.8044, lon: -122.2712 },
@@ -17,81 +12,79 @@ const courses = [
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
 // ============================
-// Get user location
+// Convert city/address to lat/lon
 // ============================
-function getLocation() {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by your browser.");
+async function setLocation() {
+  const location = document.getElementById("locationInput").value;
+  if (!location) {
+    alert("Please enter a city or address.");
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      userLat = pos.coords.latitude;
-      userLon = pos.coords.longitude;
-      fetchCourses();
-    },
-    err => {
-      console.error("Geolocation error:", err);
-      alert(
-        "Unable to retrieve your location. Make sure location services are enabled."
-      );
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        location
+      )}`
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      alert("Location not found. Try a different city or address.");
+      return;
+    }
+    userLat = parseFloat(data[0].lat);
+    userLon = parseFloat(data[0].lon);
+    fetchCourses();
+  } catch (err) {
+    console.error("Geocoding error:", err);
+    alert("Error fetching location. Try again later.");
+  }
 }
 
 // ============================
-// Calculate distance in km
+// Distance calculation
 // ============================
 function distance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
+  const R = 6371; // Radius of Earth in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+      Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
 // ============================
-// Render courses list
+// Render courses
 // ============================
 function fetchCourses() {
   const container = document.getElementById("courses");
   container.innerHTML = "";
 
   if (!userLat || !userLon) {
-    container.innerHTML = "<p>Waiting for location...</p>";
+    container.innerHTML =
+      "<p>Enter a city or address to see nearby courses.</p>";
     return;
   }
 
-  const maxDistance = parseFloat(document.getElementById("distanceSlider").value);
+  const maxDistance = parseFloat(
+    document.getElementById("distanceSlider").value
+  );
 
   let filtered = courses
-    .map(c => ({
-      ...c,
-      distance: distance(userLat, userLon, c.lat, c.lon)
-    }))
+    .map(c => ({ ...c, distance: distance(userLat, userLon, c.lat, c.lon) }))
     .filter(c => c.distance <= maxDistance);
 
-  // Sorting
   const sortBy = document.getElementById("sortSelect").value;
-  if (sortBy === "distance") {
-    filtered.sort((a, b) => a.distance - b.distance);
-  } else if (sortBy === "rating") {
-    filtered.sort((a, b) => b.rating - a.rating);
-  }
+  if (sortBy === "distance") filtered.sort((a, b) => a.distance - b.distance);
+  if (sortBy === "rating") filtered.sort((a, b) => b.rating - a.rating);
 
-  // Render each course
   filtered.forEach(c => {
     const div = document.createElement("div");
     div.className = "course";
-
     div.innerHTML = `
       <h3>${c.name}</h3>
       <p>Rating: ${c.rating} ⭐</p>
@@ -125,16 +118,13 @@ function toggleFavorite(name) {
     favorites.push(name);
   }
   localStorage.setItem("favorites", JSON.stringify(favorites));
-  fetchCourses(); // re-render to update button
+  fetchCourses(); // Re-render to update button
 }
 
 // ============================
 // Event Listeners
 // ============================
-document.getElementById("distanceSlider").addEventListener("input", fetchCourses);
+document
+  .getElementById("distanceSlider")
+  .addEventListener("input", fetchCourses);
 document.getElementById("sortSelect").addEventListener("change", fetchCourses);
-
-// ============================
-// Initialize
-// ============================
-getLocation();
