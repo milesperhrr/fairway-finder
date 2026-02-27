@@ -7,11 +7,23 @@ function updateDistanceLabel(val) {
 }
 
 function getLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    userLat = pos.coords.latitude;
-    userLon = pos.coords.longitude;
-    fetchCourses();
-  });
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat = pos.coords.latitude;
+      userLon = pos.coords.longitude;
+      fetchCourses();
+    },
+    err => {
+      console.error("Geolocation error:", err);
+      alert("Unable to retrieve your location. Make sure location services are enabled.");
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
 }
 
 async function fetchCourses() {
@@ -90,4 +102,5 @@ function loadFavorites(){
   container.innerHTML=favs.map(f=>`<div class="card">${f}</div>`).join("");
 
 }
+
 
